@@ -20,7 +20,22 @@
     subtitle =  "Echigo-Jishi"
     }
 
-#(set-global-staff-size 20.66257142857143)
+#(define Ez_numbers_engraver
+   (make-engraver
+    (acknowledgers
+     ((note-head-interface engraver grob source-engraver)
+      (let* ((context (ly:translator-context engraver))
+	     (tonic-pitch (ly:context-property context 'tonic))
+	     (tonic-name (ly:pitch-notename tonic-pitch))
+	     (grob-pitch
+	      (ly:event-property (event-cause grob) 'pitch))
+	     (grob-name (ly:pitch-notename grob-pitch))
+	     (delta (modulo (- grob-name tonic-name) 7))
+	     (note-names
+	      (make-vector 7 (number->string (1+ delta)))))
+	(ly:grob-set-property! grob 'note-names note-names))))))
+
+#(set-global-staff-size 30)
 \paper {
     
     paper-width = 21.59\cm
@@ -35,10 +50,12 @@
 \layout {
     \context { \Score
         autoBeaming = ##f
-        }
     }
-PartPOneVoiceOne =  \relative a' {
-    \clef "treble" \time 2/4 \key c \major | % 1
+}
+PartPOneVoiceOne =  \transpose c d {
+\relative a' { \easyHeadsOn
+    \clef "treble" \time 2/4 
+    \key c \major | % 1
     \stemUp a8 [ ^\markup{ \bold {Allegro} } _\f \stemUp a8 \stemUp b8
     \stemUp a8 ] | % 2
     \stemDown b8 [ \stemDown a8 \stemDown b8 \stemDown c8 ] | % 3
@@ -94,7 +111,7 @@ PartPOneVoiceOne =  \relative a' {
     \stemUp d8 [ \stemUp e8 ] r8 \stemUp b'16. ( [ \stemUp a32 ] | % 46
     \stemUp f4 ) \stemUp f4 ( | % 47
     \stemUp e4 ) r4 \bar "|."
-    }
+    }}
 
 PartPOneVoiceOneLyricsOne =  \lyricmode {\set ignoreMelismata =
     ##t\skip1 \skip1 \skip1 \skip1 \skip1 \skip1 \skip1 \skip1 \skip1
@@ -124,11 +141,17 @@ PartPOneVoiceOneLyricsOne =  \lyricmode {\set ignoreMelismata =
                 \mergeDifferentlyDottedOn\mergeDifferentlyHeadedOn
                 \context Voice = "PartPOneVoiceOne" {  \PartPOneVoiceOne }
                 \new Lyrics \lyricsto "PartPOneVoiceOne" { \set stanza = "1." \PartPOneVoiceOneLyricsOne }
+                
                 >>
             >>
         
         >>
-    \layout {}
+    \layout {
+        \context {
+            \Voice
+            \consists \Ez_numbers_engraver
+        }
+    }
     % To create MIDI output, uncomment the following line:
     %  \midi {\tempo 4 = 92 }
     }
